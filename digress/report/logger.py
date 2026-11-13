@@ -30,6 +30,9 @@ def metric_fields(val_ts):
         "train_loss",
         "train_atom",
         "train_bond",
+        "train_eval_loss",
+        "train_eval_atom",
+        "train_eval_bond",
         "val_loss",
         "val_atom",
         "val_bond",
@@ -91,7 +94,7 @@ class RunLogger:
         self.train_time += seconds
         self.steps += 1
 
-    def log_metrics(self, step, num_steps, val_losses, val_per_t, lr):
+    def log_metrics(self, step, num_steps, val_losses, val_per_t, train_eval, lr):
         train_loss, train_atom, train_bond, grad = (self.sums / self.steps).tolist()
         val, val_atom, val_bond = val_losses
         self.metrics.write(
@@ -100,6 +103,7 @@ class RunLogger:
                 "train_loss": train_loss,
                 "train_atom": train_atom,
                 "train_bond": train_bond,
+                **dict(zip(("train_eval_loss", "train_eval_atom", "train_eval_bond"), train_eval)),
                 "val_loss": val,
                 "val_atom": val_atom,
                 "val_bond": val_bond,
@@ -116,7 +120,7 @@ class RunLogger:
             }
         )
         print(
-            f"step {step}/{num_steps}  train {train_loss:.4f}  val {val:.4f}  grad {grad:.2f}",
+            f"step {step}/{num_steps}  train {train_loss:.4f}  train (fixed) {train_eval[0]:.4f}  val {val:.4f}  grad {grad:.2f}",
             flush=True,
         )
         self._reset_window()

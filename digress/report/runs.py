@@ -47,6 +47,7 @@ def loss_curves(runs):
             ax.plot(
                 *_col(run["metrics"], f"train_{part}"), color=color, lw=1.2, alpha=0.45
             )
+            ax.plot(*_col(run["metrics"], f"train_eval_{part}"), color=color, lw=1.4, ls="--")
             ax.plot(
                 *_col(run["metrics"], f"val_{part}"),
                 color=color,
@@ -57,7 +58,7 @@ def loss_curves(runs):
         ax.set_title(title)
         ax.set_xlabel("step")
         ax.grid(True, axis="y")
-    axes[0].legend(title="solid: val, faint: train", title_fontsize=7)
+    axes[0].legend(title="solid: val\ndashed: train (fixed noise)\nfaint: train (running)", title_fontsize=7)
     fig.tight_layout()
     return fig
 
