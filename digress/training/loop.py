@@ -38,12 +38,17 @@ def _evaluating(model):
 
 
 def validation_loss(run, edge_weight, batch_size=500):
+    return split_loss(run, edge_weight, get_dataset().val_idx, "val", batch_size)
+
+
+def split_loss(run, edge_weight, idx, prefix, batch_size=500):
+    # mean (loss, atom, bond) over a split with seeded noise, plus the total loss at each fixed t in VAL_TS
     data = get_dataset()
 
     def mean_loss(t_fixed=None):
         totals, count = torch.zeros(3), 0
-        for start in range(0, len(data.val_idx), batch_size):
-            batch = data.batch(data.val_idx[start : start + batch_size])
+        for start in range(0, len(idx), batch_size):
+            batch = data.batch(idx[start : start + batch_size])
             n = batch[0].shape[0]
             t = (torch.full((n,), t_fixed, device=DEVICE) if t_fixed
                  else torch.randint(1, DIFFUSION_STEPS + 1, (n,), device=DEVICE))
@@ -53,7 +58,7 @@ def validation_loss(run, edge_weight, batch_size=500):
 
     with _evaluating(run.model):
         overall = mean_loss()
-        per_t = {f"val_t{t}": mean_loss(t)[0] for t in VAL_TS}
+        per_t = {f"{prefix}_t{t}": mean_loss(t)[0] for t in VAL_TS}
     return overall, per_t
 
 
