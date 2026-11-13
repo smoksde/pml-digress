@@ -23,7 +23,7 @@ RANDOM_SEED = 0
 # Data
 MAX_ATOMS = 9
 NUM_EDGES = MAX_ATOMS * (MAX_ATOMS - 1) // 2  # upper-triangle atom pairs
-QM9_SUBSET_SIZE = 10_000
+QM9_SUBSET_SIZE = 50_000
 TRAIN_FRACTION = 0.9  # rest is the test set, only for final evaluation
 VAL_FRACTION = (
     0.1  # share of the train part held out for validation / checkpoint selection
@@ -54,12 +54,12 @@ COSINE_SCHEDULE_OFFSET = 0.008
 
 # Training
 TRAIN_STEPS = 10_000
-BATCH_SIZE = 64
+BATCH_SIZE = 256
 LEARNING_RATE = 1e-3
 EDGE_LOSS_WEIGHT = 5.0
 GRAD_CLIP = 10.0
 
-LOG_INTERVAL = 200  # train/val loss
+LOG_INTERVAL = 500  # train/val loss
 CHECKPOINT_INTERVAL = 200
 EVAL_INTERVAL = (
     1000  # sample quality: validity, uniqueness, novelty, distribution distances
