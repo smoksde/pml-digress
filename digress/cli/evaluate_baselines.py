@@ -6,14 +6,12 @@ from digress.config import BASELINES_DIR, EVAL_SAMPLES, HEURISTIC_P_RING, HEURIS
 from digress.data.chem import NUM_ATOM_TYPES, NUM_BOND_TYPES
 from digress.data.dataset import get_dataset
 from digress.data.marginals import bootstrap_stats
-from digress.evaluation.baselines import sample_prior, sample_valence_heuristic
+from digress.evaluation.baselines import BASELINES
 from digress.evaluation.metrics import distribution_distances, evaluate, graph_histograms
 from digress.report.tables import Table, format_table
 from digress.training.checkpoint import MARGINAL_KEYS
 from digress.training.loop import reference_histograms
 
-BASELINES = {"prior": ("Prior (untrained)", sample_prior),
-             "heuristic": ("Valence heuristic", sample_valence_heuristic)}
 COLUMNS = ("valid_connected", "validity", "uniqueness", "novelty", "vun",
            "tv_n_atoms", "tv_atom_types", "tv_bond_types", "tv_valence")
 

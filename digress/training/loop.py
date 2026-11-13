@@ -28,13 +28,13 @@ from digress.training.loss import denoise_loss
 VAL_TS = torch.linspace(1, DIFFUSION_STEPS, VAL_T_BUCKETS).round().long().tolist()
 
 
-def train_step(run, data, batch_size, edge_weight):
+def train_step(run, data, batch_size, edge_weight, grad_clip):
     batch = data.sample_batch(batch_size)
     t = torch.randint(1, DIFFUSION_STEPS + 1, (batch_size,), device=DEVICE)
     loss, atom_loss, bond_loss = denoise_loss(run, batch, t, edge_weight)
     run.opt.zero_grad()
     loss.backward()
-    grad_norm = torch.nn.utils.clip_grad_norm_(run.model.parameters(), float("inf"))
+    grad_norm = torch.nn.utils.clip_grad_norm_(run.model.parameters(), grad_clip or float("inf"))
     run.opt.step()
     return torch.tensor(
         [loss.item(), atom_loss.item(), bond_loss.item(), grad_norm.item()]
@@ -120,13 +120,13 @@ def setup_run(run_dir, lr, seed, model_type=None, hidden_dim=None):
     )
 
 
-def train(run, run_dir, logger, num_steps, batch_size, eval_interval, edge_weight):
+def train(run, run_dir, logger, num_steps, batch_size, eval_interval, edge_weight, grad_clip):
     data = get_dataset()
     ckpt_dir = run_dir / "checkpoints"
     for step in range(run.start_step + 1, num_steps + 1):
         step_start = time.time()
         logger.add_train_step(
-            train_step(run, data, batch_size, edge_weight), time.time() - step_start
+            train_step(run, data, batch_size, edge_weight, grad_clip), time.time() - step_start
         )
 
         if is_due(step, LOG_INTERVAL, num_steps):

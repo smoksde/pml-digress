@@ -24,12 +24,12 @@ def _drawable(mol):
         return False
 
 
-def show(graphs, outfile=None, mols_per_row=4, sub_img_size=(220, 220)):
+def show(graphs, outfile=None, mols_per_row=4, sub_img_size=(220, 220), legends=None):
     if len(graphs) == 0:
         raise ValueError("show() got an empty list")
     mols, caps, atom_hl, bond_hl = [], [], [], []
     n_valid = n_undrawable = 0
-    for X, E, mask in graphs:
+    for k, (X, E, mask) in enumerate(graphs):
         atom_idx, bond_adj = X.argmax(-1), edge_vector_to_adj(E.argmax(-1).unsqueeze(0), X.shape[0])[0]
         mol = graph_to_mol(atom_idx, bond_adj, mask)
         valid = mol is not None
@@ -40,7 +40,7 @@ def show(graphs, outfile=None, mols_per_row=4, sub_img_size=(220, 220)):
                 continue
         n_valid += valid
         mols.append(mol)
-        caps.append(Chem.MolToSmiles(mol) if valid else "invalid")
+        caps.append(legends[k] if legends else Chem.MolToSmiles(mol) if valid else "invalid")
         atom_hl.append([] if valid else list(range(mol.GetNumAtoms())))  # invalid molecules drawn in red
         bond_hl.append([] if valid else list(range(mol.GetNumBonds())))
 

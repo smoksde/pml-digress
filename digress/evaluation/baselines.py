@@ -91,3 +91,7 @@ def sample_valence_heuristic(
         for (i, j), order in bonds.items():
             adj[s, i, j] = adj[s, j, i] = order
     return atoms, adj, mask
+
+
+BASELINES = {"prior": ("Prior (untrained)", sample_prior),
+             "heuristic": ("Valence heuristic", sample_valence_heuristic)}

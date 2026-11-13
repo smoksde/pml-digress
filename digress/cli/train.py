@@ -1,6 +1,6 @@
 import argparse
 
-from digress.config import (BATCH_SIZE, DIFFUSION_STEPS, EDGE_LOSS_WEIGHT, EVAL_INTERVAL, EVAL_SAMPLES,
+from digress.config import (BATCH_SIZE, DIFFUSION_STEPS, EDGE_LOSS_WEIGHT, EVAL_INTERVAL, EVAL_SAMPLES, GRAD_CLIP,
                             LABEL_PROPERTY, LEARNING_RATE, LOG_INTERVAL, MAX_ATOMS, QM9_SUBSET_SIZE, RANDOM_SEED,
                             RUNS_DIR, TRAIN_STEPS)
 from digress.data.dataset import get_dataset
@@ -29,6 +29,7 @@ def main():
     parser.add_argument("--seed", type=int, default=RANDOM_SEED)
     parser.add_argument("--eval-interval", type=int, default=EVAL_INTERVAL)
     parser.add_argument("--edge-loss-weight", type=float, default=EDGE_LOSS_WEIGHT)
+    parser.add_argument("--grad-clip", type=float, default=GRAD_CLIP, help="max gradient norm; 0 = off")
     parser.add_argument("--hidden-dim", type=int, help="model width (new runs only)")
     parser.add_argument("--model", choices=sorted(MODEL_REGISTRY), help="model type (new runs only)")
     args = parser.parse_args()
@@ -40,8 +41,8 @@ def main():
     logger = RunLogger(run_dir, run.start_step, VAL_TS)
     logger.write_config(run_description(
         run, get_dataset(), run_name=args.run_name, steps=args.steps, lr=args.lr, batch_size=args.batch_size,
-        seed=args.seed, eval_interval=args.eval_interval, edge_loss_weight=args.edge_loss_weight))
-    train(run, run_dir, logger, args.steps, args.batch_size, args.eval_interval, args.edge_loss_weight)
+        seed=args.seed, eval_interval=args.eval_interval, edge_loss_weight=args.edge_loss_weight, grad_clip=args.grad_clip))
+    train(run, run_dir, logger, args.steps, args.batch_size, args.eval_interval, args.edge_loss_weight, args.grad_clip)
 
 
 if __name__ == "__main__":
