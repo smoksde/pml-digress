@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=train
 #SBATCH --partition=gpu-teaching-2h
-#SBATCH --gpus-per-node=3090:1
+#SBATCH --gpus-per-node=1
 #SBATCH --cpus-per-task=4
 #SBATCH --output=logs/%x_%j.out
 # usage (from the repo root):
