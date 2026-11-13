@@ -15,8 +15,10 @@ def load_run(path):
         with open(path / name) as f:
             return [{k: float(v) for k, v in r.items() if v != ""} for r in csv.DictReader(f)]
 
+    test = path / "test_results.json"
     return {"name": path.name, "config": json.loads((path / "config.json").read_text()),
-            "metrics": rows("metrics.csv"), "samples": rows("samples.csv")}
+            "metrics": rows("metrics.csv"), "samples": rows("samples.csv"),
+            "test": json.loads(test.read_text()) if test.exists() else None}
 
 
 def _col(rows, key):
@@ -66,29 +68,35 @@ def loss_by_t(runs):
 
 SAMPLE_PANELS = (("valid_connected", "Valid and connected"), ("validity", "Valid (RDKit)"),
                  ("connected", "Connected"), ("uniqueness", "Uniqueness"), ("novelty", "Novelty"),
-                 ("fail_valence", "Valence failures"), ("bonds_per_mol", "Bonds per molecule"),
-                 ("tv_atom_types", "Atom types: TV to train"), ("tv_bond_types", "Bond types: TV to train"))
-SHARES = {"valid_connected", "validity", "connected", "uniqueness", "novelty", "fail_valence"}
+                 ("vun", "Valid, unique, novel"), ("fail_valence", "Valence failures"),
+                 ("bonds_per_mol", "Bonds per molecule"), ("tv_n_atoms", "Atom counts: total variation"),
+                 ("tv_atom_types", "Atom types: total variation"),
+                 ("tv_bond_types", "Bond types: total variation"),
+                 ("tv_valence", "Valences: total variation"))
+SHARES = {"valid_connected", "validity", "connected", "uniqueness", "novelty", "vun", "fail_valence"}
+BONDS_PANEL = [k for k, _ in SAMPLE_PANELS].index("bonds_per_mol")
 
 
 def sample_quality(runs):
     if not any(r["samples"] for r in runs):
         return None
-    fig, axes = figure(FULL_WIDTH, 5.4, 3, 3, sharex=True)
+    fig, axes = figure(FULL_WIDTH, 7.2, 4, 3, sharex=True)
     for run, color in zip(runs, _colors(runs)):
         for ax, (key, _) in zip(axes.flat, SAMPLE_PANELS):
             ax.plot(*_col(run["samples"], key), color=color, lw=1.6, marker="o", ms=3, label=run["name"])
         ref = run["config"].get("train_bonds_per_mol")
         if ref:
-            axes.flat[6].axhline(ref, color=INK_2, lw=0.8, ls="--")
-            axes.flat[6].text(0.02, ref, " training", transform=axes.flat[6].get_yaxis_transform(),
+            axes.flat[BONDS_PANEL].axhline(ref, color=INK_2, lw=0.8, ls="--")
+            axes.flat[BONDS_PANEL].text(0.02, ref, " training", transform=axes.flat[BONDS_PANEL].get_yaxis_transform(),
                               va="bottom", fontsize=7, color=INK_2)
     for i, (ax, (key, title)) in enumerate(zip(axes.flat, SAMPLE_PANELS)):
         ax.set_title(title)
         ax.grid(True, axis="y")
         if key in SHARES:
             ax.set_ylim(0, 1.05)
-        if i >= 6:
+        if key.startswith("tv_"):
+            ax.set_ylabel("distance to val", fontsize=7)
+        if i >= len(SAMPLE_PANELS) - 3:
             ax.set_xlabel("step")
     if len(runs) > 1:
         axes.flat[0].legend(fontsize=7)
@@ -121,12 +129,20 @@ def summary_table(runs):
         m, s, c = run["metrics"], run["samples"], run["config"]
         best = min(m, key=lambda r: r["val_loss"])
         last = s[-1] if s else {}
+        test = run["test"] or {}
+        test_samples = test.get("samples", {})
         rows.append((run["name"], f"{int(m[-1]['step']):,}", f"{c['lr']:g}", f"{c['batch_size']}",
                      f"{m[-1]['val_loss']:.4f}", f"{best['val_loss']:.4f} @ {int(best['step']):,}",
-                     *(f"{last[k]:.2f}" if k in last else "-" for k in ("valid_connected", "validity", "uniqueness", "novelty")),
+                     *(f"{last[k]:.2f}" if k in last else "-" for k in ("valid_connected", "uniqueness", "novelty", "vun")),
+                     f"{test['test_loss']:.4f}" if test else "-",
+                     *(f"{test_samples[k]:.2f}" if k in test_samples else "-" for k in ("valid_connected", "vun")),
                      f"{m[-1]['elapsed_min']:.0f}"))
-    return Table("training_runs", "Training runs: final and best validation loss and final sample quality.",
-                 ("Run", "Steps", "LR", "Batch", "Final val", "Best val", "Valid+conn.", "Validity", "Uniqueness", "Novelty",
-                  "Minutes"),
-                 rows, ("Sample quality from the last evaluation. Valid+conn.: RDKit-valid and a single fragment; uniqueness "
-                  "and novelty are computed on those, comparing stereo-free SMILES.",))
+    return Table("training_runs", "Training runs: validation loss, last sample quality, and the final test evaluation.",
+                 ("Run", "Steps", "LR", "Batch", "Final val", "Best val", "Valid+conn.", "Uniqueness", "Novelty", "VUN",
+                  "Test loss", "Test valid+conn.", "Test VUN", "Minutes"),
+                 rows, ("Sample quality from the last evaluation during training. Valid+conn.: RDKit-valid and a single "
+                        "fragment; uniqueness and novelty are computed on those, comparing stereo-free SMILES. VUN: valid, "
+                        "connected, unique and novel, as a share of all samples. Total variation distance (TV, tv_* columns in "
+                        "samples.csv): 0.5 * sum |p - q| between generated and validation histograms; 0 = identical "
+                        "distributions, 1 = no overlap. Test columns: best.pt scored once on the "
+                        "test split by digress.cli.evaluate_test ('-' if not run yet).",))

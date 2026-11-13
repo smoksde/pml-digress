@@ -47,7 +47,7 @@ def main():
     data = get_dataset()
 
     (loss, atom, bond), per_t = split_loss(run, edge_weight, data.test_idx, "test")
-    samples, _ = sample_quality(run, args.n)
+    samples, _ = sample_quality(run, args.n, data.test_idx)
     results = {
         "checkpoint": str(args.checkpoint),
         "step": ckpt["step"],

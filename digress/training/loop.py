@@ -9,7 +9,7 @@ from digress.config import RANDOM_SEED, VAL_T_BUCKETS
 from digress.data.dataset import get_dataset
 from digress.data.graphs import edge_vector_to_adj
 from digress.diffusion.sampling import generate
-from digress.evaluation.metrics import distribution_distances, evaluate
+from digress.evaluation.metrics import distribution_distances, evaluate, graph_histograms
 from digress.models.conditioning import normalize
 from digress.training.checkpoint import build_run, load_checkpoint, save_checkpoint
 from digress.training.loss import denoise_loss
@@ -62,18 +62,24 @@ def split_loss(run, edge_weight, idx, prefix, batch_size=500):
     return overall, per_t
 
 
-def sample_quality(run, n=EVAL_SAMPLES):
+def reference_histograms(data, idx):
+    return graph_histograms(data.atoms[idx], edge_vector_to_adj(data.edge_vecs[idx], MAX_ATOMS), data.masks[idx])
+
+
+def sample_quality(run, n=EVAL_SAMPLES, ref_idx=None):
+    # distribution distances compare against ref_idx molecules: validation during training, test at the end
     data = get_dataset()
+    ref_idx = data.val_idx if ref_idx is None else ref_idx
     with _evaluating(run.model):
         y_in = None
         if run.model.y_dim:
             idx = data.train_idx[torch.randint(len(data.train_idx), (n,))]
             y_in = normalize(data.y[idx], data.y_mean, data.y_std).to(DEVICE)
-        atoms, bonds, mask, edge_mask = generate(run.model, run.atom_diffusion, run.bond_diffusion, run.marginals,
+        atoms, bonds, mask, _ = generate(run.model, run.atom_diffusion, run.bond_diffusion, run.marginals,
                                                  n, y_in)
     adj = edge_vector_to_adj(bonds, MAX_ATOMS)
     scores = evaluate(atoms.cpu(), adj.cpu(), mask.cpu(), data.train_smiles_flat)
-    scores.update(distribution_distances(atoms, bonds, mask, edge_mask, run.marginals))
+    scores.update(distribution_distances(graph_histograms(atoms, adj, mask), reference_histograms(data, ref_idx)))
     return scores, (atoms.cpu(), adj.cpu(), mask.cpu())
 
 
