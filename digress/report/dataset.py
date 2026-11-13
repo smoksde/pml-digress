@@ -70,7 +70,8 @@ def scan_tables(scan):
 
 def split_tables(c):
     subset = Table("subset", "Training subset and its split.", ("Quantity", "Value"),
-                   [("molecules in subset", _n(c.size)), ("train", _n(c.n_train)), ("validation", _n(c.n_val)), ("test", _n(c.n_test)),
+                   [("molecules in subset", _n(c.size)),
+                    ("duplicate graphs skipped while sampling", _n(c.skipped_duplicates)), ("train", _n(c.n_train)), ("validation", _n(c.n_val)), ("test", _n(c.n_test)),
                     ("validation graphs also in train", _count(c.leaked_val_graphs, c.leaked_val_graphs / c.n_val)),
                     ("test graphs also in train", _count(c.leaked_test_graphs, c.leaked_test_graphs / c.n_test)),
                     ("atom-count distance to full set (TV)", f"{c.atom_count_distance:.4f}")])

@@ -30,6 +30,7 @@ class SplitCheck:
     n_train: int
     n_val: int
     n_test: int
+    skipped_duplicates: int
     leaked_val_graphs: int
     leaked_test_graphs: int
     atom_count_distance: float
@@ -86,6 +87,7 @@ def check_split(scan):
         n_train=len(train),
         n_val=len(val),
         n_test=len(test),
+        skipped_duplicates=load_cache(CACHE_PATH)["skipped_duplicates"],
         leaked_val_graphs=sum(s in train_set for s in val),
         leaked_test_graphs=sum(s in train_set for s in test),
         atom_count_distance=_atom_count_distance(scan, data),
