@@ -19,9 +19,9 @@ def main():
     print(f"validity: {m['validity']:.2f}  uniqueness: {m['uniqueness']:.2f}  novelty: {m['novelty']:.2f}  "
           f"(n={m['n']})")
     if args.image:
-        from digress.report.molecules import graphs_from_sample, show
+        from digress.report.molecules import show
 
-        show(graphs_from_sample(atoms[:16].cpu(), bonds[:16].cpu(), mask[:16].cpu()), outfile=args.image)
+        show(atoms[:16], bonds[:16], mask[:16], outfile=args.image)
 
 
 if __name__ == "__main__":

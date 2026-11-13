@@ -1,6 +1,5 @@
 import torch
 from rdkit import Chem
-from rdkit.Chem import AllChem
 
 ATOM_LIST = ["C", "N", "O", "F"]
 MAX_VALENCE = [4, 3, 2, 1]
@@ -46,19 +45,6 @@ def graph_to_mol(atom_idx, bond_adj, mask):
         Chem.SanitizeMol(mol)
     except Exception:
         return None
-    return mol
-
-
-def mol_for_drawing(atom_idx, bond_adj, mask):
-    mol = build_mol(atom_idx, bond_adj, mask)
-    try:
-        Chem.SanitizeMol(mol)
-    except Exception:
-        mol.UpdatePropertyCache(strict=False)
-    try:
-        AllChem.Compute2DCoords(mol)
-    except Exception:
-        pass
     return mol
 
 

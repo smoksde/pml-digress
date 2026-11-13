@@ -39,10 +39,9 @@ def main():
         scores.update(distribution_distances(graph_histograms(atoms, adj, mask), reference))
         results["baselines"][key] = {"name": name, **scores}
         if args.image:
-            from digress.report.molecules import graphs_from_sample, show
+            from digress.report.molecules import show
 
-            show(graphs_from_sample(atoms[:16], adj[:16], mask[:16]), outfile=args.out / f"{key}.png",
-                 mols_per_row=8, sub_img_size=(160, 140))
+            show(atoms[:16], adj[:16], mask[:16], outfile=args.out / f"{key}.png")
 
     table = Table("baselines", f"Non-learned baselines, {args.n} samples each, TV against {args.ref} molecules.",
                   ("Baseline", *COLUMNS),

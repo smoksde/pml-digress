@@ -127,15 +127,10 @@ class RunLogger:
 
     def log_samples(self, step, scores, samples):
         try:
-            from digress.report.molecules import graphs_from_sample, show
+            from digress.report.molecules import show
 
             atoms, adj, mask = (x[:16] for x in samples)
-            show(
-                graphs_from_sample(atoms, adj, mask),
-                outfile=self.run_dir / "samples" / f"step_{step:06d}.png",
-                mols_per_row=8,
-                sub_img_size=(160, 140),
-            )
+            show(atoms, adj, mask, outfile=self.run_dir / "samples" / f"step_{step:06d}.png")
         except (RuntimeError, ImportError) as err:
             print(f"  could not draw samples: {err}", flush=True)
         self.samples.write({"step": step, **{k: scores[k] for k in SAMPLE_FIELDS[1:]}})

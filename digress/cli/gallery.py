@@ -9,7 +9,7 @@ from digress.data.dataset import get_dataset
 from digress.data.graphs import edge_vector_to_adj
 from digress.data.marginals import bootstrap_stats
 from digress.diffusion.discrete import DiscreteDiffusion, noise_graph
-from digress.report.molecules import graphs_from_sample, show
+from digress.report.molecules import show
 
 
 def forward_noising(data, index, steps=8):
@@ -23,8 +23,7 @@ def forward_noising(data, index, steps=8):
     X, E = noise_graph(X0, E0, mask, ts.clamp(min=1), DiscreteDiffusion(atom_marginal, DIFFUSION_STEPS),
                        DiscreteDiffusion(bond_marginal, DIFFUSION_STEPS))
     X[0], E[0] = X0[0], E0[0]
-    graphs = [(X[k], E[k], mask[k]) for k in range(steps)]
-    show(graphs, outfile=PLOTS_DIR / "forward_noising.png", mols_per_row=steps, sub_img_size=(180, 180),
+    show(X.argmax(-1), edge_vector_to_adj(E.argmax(-1), MAX_ATOMS), mask, outfile=PLOTS_DIR / "forward_noising.pdf",
          legends=[f"t = {t}" for t in ts.tolist()])
 
 
@@ -39,4 +38,4 @@ if __name__ == "__main__":
     else:
         idx = data.train_idx[:16]
         adj = edge_vector_to_adj(data.edge_vecs[idx], MAX_ATOMS)
-        show(graphs_from_sample(data.atoms[idx], adj, data.masks[idx]), outfile=PLOTS_DIR / "gallery.png")
+        show(data.atoms[idx], adj, data.masks[idx], outfile=PLOTS_DIR / "gallery.pdf")
