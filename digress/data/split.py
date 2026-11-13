@@ -28,7 +28,9 @@ class PropertyShift(NamedTuple):
 class SplitCheck:
     size: int
     n_train: int
+    n_val: int
     n_test: int
+    leaked_val_graphs: int
     leaked_test_graphs: int
     atom_count_distance: float
     property_shifts: list
@@ -69,6 +71,9 @@ def check_split(scan):
     train = [
         flat_smiles(Chem.MolFromSmiles(data.smiles[i])) for i in data.train_idx.tolist()
     ]
+    val = [
+        flat_smiles(Chem.MolFromSmiles(data.smiles[i])) for i in data.val_idx.tolist()
+    ]
     test = [
         flat_smiles(Chem.MolFromSmiles(data.smiles[i])) for i in data.test_idx.tolist()
     ]
@@ -79,7 +84,9 @@ def check_split(scan):
     return SplitCheck(
         size=len(data),
         n_train=len(train),
+        n_val=len(val),
         n_test=len(test),
+        leaked_val_graphs=sum(s in train_set for s in val),
         leaked_test_graphs=sum(s in train_set for s in test),
         atom_count_distance=_atom_count_distance(scan, data),
         property_shifts=_property_shifts(

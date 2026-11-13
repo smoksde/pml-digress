@@ -14,6 +14,7 @@ def run_description(run, data, **settings):
             "eval_samples": EVAL_SAMPLES, "log_interval": LOG_INTERVAL, "diffusion_steps": DIFFUSION_STEPS,
             "model": run.model_config, "label_property": LABEL_PROPERTY,
             "max_atoms": MAX_ATOMS, "subset_size": QM9_SUBSET_SIZE, "train_molecules": len(data.train_idx),
+            "val_molecules": len(data.val_idx), "test_molecules": len(data.test_idx),
             "parameters": sum(p.numel() for p in run.model.parameters()),
             "train_bonds_per_mol": (data.edge_vecs[data.train_idx] > 0).sum(1).float().mean().item(),
             "resumed_from_step": run.start_step}

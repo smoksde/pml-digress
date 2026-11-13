@@ -42,8 +42,8 @@ def validation_loss(run, edge_weight, batch_size=500):
 
     def mean_loss(t_fixed=None):
         totals, count = torch.zeros(3), 0
-        for start in range(0, len(data.test_idx), batch_size):
-            batch = data.batch(data.test_idx[start : start + batch_size])
+        for start in range(0, len(data.val_idx), batch_size):
+            batch = data.batch(data.val_idx[start : start + batch_size])
             n = batch[0].shape[0]
             t = (torch.full((n,), t_fixed, device=DEVICE) if t_fixed
                  else torch.randint(1, DIFFUSION_STEPS + 1, (n,), device=DEVICE))

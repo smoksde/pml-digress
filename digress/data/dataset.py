@@ -7,7 +7,7 @@ import torch
 from rdkit import Chem
 
 from digress.config import (CACHE_PATH, DATA_DIR, LABEL_PROPERTY, MAX_ATOMS, QM9_SUBSET_SIZE, QM9_TARGETS, RANDOM_SEED,
-                            TRAIN_FRACTION)
+                            TRAIN_FRACTION, VAL_FRACTION)
 from digress.data.chem import ATOM_LIST, flat_smiles, mol_to_graph
 from digress.data.graphs import adj_to_edge_vector
 
@@ -70,11 +70,14 @@ def load_cache(path=CACHE_PATH, need_labels=False):
     return _build_cache(path)
 
 
-def _split_indices(n, train_fraction=TRAIN_FRACTION, seed=RANDOM_SEED):
+def _split_indices(n, train_fraction=TRAIN_FRACTION, val_fraction=VAL_FRACTION, seed=RANDOM_SEED):
+    # test = tail of the permutation (independent of val_fraction); val is carved from the train part
     perm = list(range(n))
     random.Random(seed).shuffle(perm)
     n_train = int(n * train_fraction)
-    return torch.tensor(perm[:n_train]), torch.tensor(perm[n_train:])
+    n_val = int(n_train * val_fraction)
+    train, test = perm[:n_train], perm[n_train:]
+    return torch.tensor(train[n_val:]), torch.tensor(train[:n_val]), torch.tensor(test)
 
 
 def _label_column(cache, label_property):
@@ -90,6 +93,7 @@ class GraphDataset:
     edge_vecs: torch.Tensor
     smiles: list
     train_idx: torch.Tensor
+    val_idx: torch.Tensor
     test_idx: torch.Tensor
     y: torch.Tensor = None
     y_mean: torch.Tensor = None
@@ -113,9 +117,9 @@ class GraphDataset:
 @lru_cache(maxsize=None)
 def get_dataset(label_property=LABEL_PROPERTY, cache_path=CACHE_PATH):
     cache = load_cache(cache_path, need_labels=label_property is not None)
-    train_idx, test_idx = _split_indices(len(cache["atoms"]))
+    train_idx, val_idx, test_idx = _split_indices(len(cache["atoms"]))
     data = GraphDataset(cache["atoms"], cache["masks"], adj_to_edge_vector(cache["bonds"]), cache["smiles"],
-                        train_idx, test_idx)
+                        train_idx, val_idx, test_idx)
     if label_property is not None:
         data.y = _label_column(cache, label_property)
         data.y_mean, data.y_std = data.y[train_idx].mean(0), data.y[train_idx].std(0)

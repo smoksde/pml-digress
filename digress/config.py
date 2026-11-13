@@ -23,7 +23,8 @@ RANDOM_SEED = 0
 MAX_ATOMS = 9
 NUM_EDGES = MAX_ATOMS * (MAX_ATOMS - 1) // 2  # upper-triangle atom pairs
 QM9_SUBSET_SIZE = 10_000
-TRAIN_FRACTION = 0.9
+TRAIN_FRACTION = 0.9  # rest is the test set, only for final evaluation
+VAL_FRACTION = 0.1  # share of the train part held out for validation / checkpoint selection
 MARGINAL_SAMPLE_SIZE = 2_000  # train molecules used to estimate the noise marginals
 QM9_TARGETS = {  # column in the PyG QM9 `y` tensor
     "mu": 0, "alpha": 1, "homo": 2, "lumo": 3, "gap": 4, "r2": 5,
