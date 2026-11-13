@@ -3,6 +3,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 ATOM_LIST = ["C", "N", "O", "F"]
+MAX_VALENCE = [4, 3, 2, 1]
 NUM_ATOM_TYPES = len(ATOM_LIST)
 
 BOND_ORDER = [Chem.BondType.SINGLE, Chem.BondType.DOUBLE, Chem.BondType.TRIPLE]
