@@ -1,5 +1,6 @@
 __pycache__/
 *.pyc
 outputs/
+logs/
 report_dir/
 qm9_pyg/
