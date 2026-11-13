@@ -21,7 +21,7 @@ def compute_loss(atom_logits, bond_logits, atoms0, bonds0, node_mask, edge_mask,
     return atom_loss + edge_weight * bond_loss, atom_loss, bond_loss
 
 
-def denoise_loss(run, batch, t, edge_weight):
+def predict(run, batch, t):
     atoms0, mask0, bonds0, y0 = (None if v is None else v.to(DEVICE) for v in batch)
     X0 = F.one_hot(atoms0, NUM_ATOM_TYPES).float()
     E0 = F.one_hot(bonds0, NUM_BOND_TYPES).float()
@@ -31,4 +31,8 @@ def denoise_loss(run, batch, t, edge_weight):
         data = get_dataset()
         y_in = normalize(y0, data.y_mean, data.y_std)
     atom_logits, bond_logits = run.model(X, E, y_in, t)
-    return compute_loss(atom_logits, bond_logits, atoms0, bonds0, mask0, edge_mask_from_nodes(mask0), edge_weight)
+    return atom_logits, bond_logits, atoms0, bonds0, mask0, edge_mask_from_nodes(mask0)
+
+
+def denoise_loss(run, batch, t, edge_weight):
+    return compute_loss(*predict(run, batch, t), edge_weight)

@@ -5,7 +5,9 @@ from pathlib import Path
 from digress.config import EDGE_LOSS_WEIGHT, EVAL_SAMPLES
 from digress.data.dataset import get_dataset
 from digress.training.checkpoint import build_run, load_checkpoint
-from digress.training.loop import sample_quality, split_loss
+from digress.evaluation.denoising import denoising_metrics, denoising_table
+from digress.report.tables import format_table
+from digress.training.loop import _evaluating, sample_quality, split_loss
 
 
 def _edge_weight(run_dir, override):
@@ -48,6 +50,8 @@ def main():
 
     (loss, atom, bond), per_t = split_loss(run, edge_weight, data.test_idx, "test")
     samples, _ = sample_quality(run, args.n, data.test_idx)
+    with _evaluating(run.model):
+        denoising = denoising_metrics(run, data.test_idx)
     results = {
         "checkpoint": str(args.checkpoint),
         "step": ckpt["step"],
@@ -59,6 +63,7 @@ def main():
         "test_bond": bond,
         **per_t,
         "samples": {"n": args.n, **samples},
+        "denoising": denoising,
     }
 
     print(
@@ -72,6 +77,7 @@ def main():
     print(
         "samples: " + "  ".join(f"{k} {v:.3f}" for k, v in samples.items() if k != "n")
     )
+    print("\n".join(format_table(denoising_table(denoising))))
 
     out = args.out or run_dir / "test_results.json"
     out.write_text(json.dumps(results, indent=2))
