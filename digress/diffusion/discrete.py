@@ -27,12 +27,16 @@ class DiscreteDiffusion:
         return torch.where(mask, resampled, x0)
 
     def posterior_probs(self, xt, pred_x0_probs, t):
+        # p(z_s | z_t) = sum_x p(x) q(z_s | z_t, x),  q(z_s | z_t, x) = Q_t[z_s, z_t] Qbar_s[x, z_s] / Qbar_t[x, z_t]
         m, eye = self.m.to(xt.device), torch.eye(self.K, device=xt.device)
         a_t = self.alphas[t - 1].item()
+        a_bar_t = self.alpha_bars[t - 1].item()
         a_prev = self.alpha_bars[t - 2].item() if t > 1 else 1.0
         Q_t = a_t * eye + (1 - a_t) * m
+        Qbar_t = a_bar_t * eye + (1 - a_bar_t) * m
         Qbar_prev = a_prev * eye + (1 - a_prev) * m
-        p = Q_t[:, xt].movedim(0, -1) * (pred_x0_probs @ Qbar_prev)
+        weights = pred_x0_probs / Qbar_t[:, xt].movedim(0, -1).clamp(min=1e-12)  # p(x) / q(z_t | x)
+        p = Q_t[:, xt].movedim(0, -1) * (weights @ Qbar_prev)
         return p / p.sum(-1, keepdim=True).clamp(min=1e-12)
 
     def reverse_step(self, xt, logits, t):
