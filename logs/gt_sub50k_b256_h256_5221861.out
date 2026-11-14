@@ -1,0 +1,121 @@
+cached 50000 molecules, skipped 14727 (filter) + 39 (duplicate graphs)
+step 500/40000  train 2.8596  train (fixed) 2.8365  val 2.8324  grad 1.13
+step 1000/40000  train 2.7927  train (fixed) 2.8300  val 2.8267  grad 0.76
+step 1500/40000  train 2.7807  train (fixed) 2.8279  val 2.8247  grad 0.73
+step 2000/40000  train 2.7836  train (fixed) 2.8277  val 2.8231  grad 0.76
+6/16 valid
+  samples @ 2000: valid+connected 0.31  validity 0.47  connected 0.77  vun 0.28  bonds/mol 9.9
+step 2500/40000  train 2.7733  train (fixed) 2.8257  val 2.8206  grad 0.64
+step 3000/40000  train 2.7795  train (fixed) 2.8201  val 2.8167  grad 0.64
+step 3500/40000  train 2.7769  train (fixed) 2.8221  val 2.8182  grad 0.60
+step 4000/40000  train 2.7785  train (fixed) 2.8182  val 2.8144  grad 0.56
+6/16 valid
+  samples @ 4000: valid+connected 0.37  validity 0.50  connected 0.81  vun 0.34  bonds/mol 9.7
+step 4500/40000  train 2.7729  train (fixed) 2.8203  val 2.8161  grad 0.55
+step 5000/40000  train 2.7749  train (fixed) 2.8182  val 2.8134  grad 0.54
+step 5500/40000  train 2.7756  train (fixed) 2.8160  val 2.8112  grad 0.53
+step 6000/40000  train 2.7748  train (fixed) 2.8213  val 2.8173  grad 0.50
+9/16 valid
+  samples @ 6000: valid+connected 0.33  validity 0.66  connected 0.55  vun 0.29  bonds/mol 8.5
+step 6500/40000  train 2.7713  train (fixed) 2.8153  val 2.8118  grad 0.49
+step 7000/40000  train 2.7723  train (fixed) 2.8150  val 2.8101  grad 0.48
+step 7500/40000  train 2.7723  train (fixed) 2.8166  val 2.8124  grad 0.48
+step 8000/40000  train 2.7685  train (fixed) 2.8134  val 2.8091  grad 0.47
+11/16 valid
+  samples @ 8000: valid+connected 0.44  validity 0.66  connected 0.71  vun 0.38  bonds/mol 9.0
+step 8500/40000  train 2.7657  train (fixed) 2.8151  val 2.8111  grad 0.45
+step 9000/40000  train 2.7733  train (fixed) 2.8157  val 2.8108  grad 0.43
+step 9500/40000  train 2.7668  train (fixed) 2.8108  val 2.8070  grad 0.43
+step 10000/40000  train 2.7710  train (fixed) 2.8097  val 2.8080  grad 0.42
+8/16 valid
+  samples @ 10000: valid+connected 0.43  validity 0.62  connected 0.75  vun 0.37  bonds/mol 9.1
+step 10500/40000  train 2.7722  train (fixed) 2.8110  val 2.8059  grad 0.42
+step 11000/40000  train 2.7686  train (fixed) 2.8102  val 2.8045  grad 0.41
+step 11500/40000  train 2.7628  train (fixed) 2.8085  val 2.8049  grad 0.41
+step 12000/40000  train 2.7668  train (fixed) 2.8076  val 2.8028  grad 0.43
+8/16 valid
+  samples @ 12000: valid+connected 0.44  validity 0.60  connected 0.77  vun 0.40  bonds/mol 9.2
+step 12500/40000  train 2.7570  train (fixed) 2.8094  val 2.8033  grad 0.40
+step 13000/40000  train 2.7605  train (fixed) 2.8058  val 2.8016  grad 0.39
+step 13500/40000  train 2.7580  train (fixed) 2.8051  val 2.8016  grad 0.38
+step 14000/40000  train 2.7623  train (fixed) 2.8041  val 2.7989  grad 0.40
+9/16 valid
+  samples @ 14000: valid+connected 0.46  validity 0.69  connected 0.71  vun 0.39  bonds/mol 9.0
+step 14500/40000  train 2.7549  train (fixed) 2.8014  val 2.7973  grad 0.40
+step 15000/40000  train 2.7641  train (fixed) 2.8036  val 2.7993  grad 0.38
+step 15500/40000  train 2.7637  train (fixed) 2.8032  val 2.7979  grad 0.39
+step 16000/40000  train 2.7671  train (fixed) 2.8030  val 2.7970  grad 0.39
+7/16 valid
+  samples @ 16000: valid+connected 0.50  validity 0.60  connected 0.85  vun 0.43  bonds/mol 9.7
+step 16500/40000  train 2.7502  train (fixed) 2.8004  val 2.7951  grad 0.39
+step 17000/40000  train 2.7599  train (fixed) 2.8024  val 2.7978  grad 0.38
+step 17500/40000  train 2.7571  train (fixed) 2.8015  val 2.7964  grad 0.37
+step 18000/40000  train 2.7650  train (fixed) 2.8050  val 2.7990  grad 0.37
+11/16 valid
+  samples @ 18000: valid+connected 0.54  validity 0.74  connected 0.77  vun 0.47  bonds/mol 9.0
+step 18500/40000  train 2.7503  train (fixed) 2.7980  val 2.7929  grad 0.38
+step 19000/40000  train 2.7628  train (fixed) 2.8001  val 2.7948  grad 0.38
+step 19500/40000  train 2.7592  train (fixed) 2.7991  val 2.7937  grad 0.37
+step 20000/40000  train 2.7492  train (fixed) 2.7980  val 2.7921  grad 0.36
+9/16 valid
+  samples @ 20000: valid+connected 0.55  validity 0.67  connected 0.85  vun 0.47  bonds/mol 9.7
+step 20500/40000  train 2.7529  train (fixed) 2.7973  val 2.7919  grad 0.36
+step 21000/40000  train 2.7585  train (fixed) 2.7968  val 2.7924  grad 0.35
+step 21500/40000  train 2.7636  train (fixed) 2.7953  val 2.7895  grad 0.35
+step 22000/40000  train 2.7548  train (fixed) 2.7969  val 2.7920  grad 0.35
+11/16 valid
+  samples @ 22000: valid+connected 0.58  validity 0.75  connected 0.79  vun 0.47  bonds/mol 9.3
+step 22500/40000  train 2.7493  train (fixed) 2.7961  val 2.7919  grad 0.35
+step 23000/40000  train 2.7556  train (fixed) 2.7962  val 2.7899  grad 0.35
+step 23500/40000  train 2.7527  train (fixed) 2.7961  val 2.7907  grad 0.35
+step 24000/40000  train 2.7565  train (fixed) 2.7921  val 2.7872  grad 0.35
+10/16 valid
+  samples @ 24000: valid+connected 0.55  validity 0.67  connected 0.85  vun 0.46  bonds/mol 9.5
+step 24500/40000  train 2.7419  train (fixed) 2.7922  val 2.7873  grad 0.34
+step 25000/40000  train 2.7426  train (fixed) 2.7927  val 2.7878  grad 0.35
+step 25500/40000  train 2.7513  train (fixed) 2.7925  val 2.7860  grad 0.34
+step 26000/40000  train 2.7402  train (fixed) 2.7925  val 2.7859  grad 0.33
+12/16 valid
+  samples @ 26000: valid+connected 0.61  validity 0.77  connected 0.82  vun 0.52  bonds/mol 9.3
+step 26500/40000  train 2.7427  train (fixed) 2.7902  val 2.7841  grad 0.34
+step 27000/40000  train 2.7474  train (fixed) 2.7913  val 2.7855  grad 0.33
+step 27500/40000  train 2.7467  train (fixed) 2.7926  val 2.7866  grad 0.33
+step 28000/40000  train 2.7462  train (fixed) 2.7903  val 2.7851  grad 0.33
+12/16 valid
+  samples @ 28000: valid+connected 0.64  validity 0.79  connected 0.82  vun 0.54  bonds/mol 9.1
+step 28500/40000  train 2.7467  train (fixed) 2.7890  val 2.7840  grad 0.34
+step 29000/40000  train 2.7481  train (fixed) 2.7885  val 2.7839  grad 0.33
+step 29500/40000  train 2.7463  train (fixed) 2.7899  val 2.7849  grad 0.32
+step 30000/40000  train 2.7426  train (fixed) 2.7894  val 2.7831  grad 0.33
+10/16 valid
+  samples @ 30000: valid+connected 0.60  validity 0.70  connected 0.87  vun 0.51  bonds/mol 9.5
+step 30500/40000  train 2.7474  train (fixed) 2.7918  val 2.7856  grad 0.31
+step 31000/40000  train 2.7453  train (fixed) 2.7885  val 2.7823  grad 0.32
+step 31500/40000  train 2.7395  train (fixed) 2.7889  val 2.7827  grad 0.31
+step 32000/40000  train 2.7469  train (fixed) 2.7879  val 2.7828  grad 0.31
+10/16 valid
+  samples @ 32000: valid+connected 0.62  validity 0.78  connected 0.82  vun 0.53  bonds/mol 9.2
+step 32500/40000  train 2.7443  train (fixed) 2.7864  val 2.7810  grad 0.31
+step 33000/40000  train 2.7493  train (fixed) 2.7881  val 2.7818  grad 0.31
+step 33500/40000  train 2.7464  train (fixed) 2.7888  val 2.7839  grad 0.32
+step 34000/40000  train 2.7424  train (fixed) 2.7884  val 2.7836  grad 0.31
+11/16 valid
+  samples @ 34000: valid+connected 0.64  validity 0.84  connected 0.78  vun 0.52  bonds/mol 9.0
+step 34500/40000  train 2.7449  train (fixed) 2.7867  val 2.7814  grad 0.31
+step 35000/40000  train 2.7421  train (fixed) 2.7868  val 2.7806  grad 0.32
+step 35500/40000  train 2.7453  train (fixed) 2.7871  val 2.7821  grad 0.30
+step 36000/40000  train 2.7460  train (fixed) 2.7882  val 2.7839  grad 0.31
+12/16 valid
+  samples @ 36000: valid+connected 0.60  validity 0.81  connected 0.76  vun 0.50  bonds/mol 8.9
+step 36500/40000  train 2.7346  train (fixed) 2.7869  val 2.7810  grad 0.30
+step 37000/40000  train 2.7320  train (fixed) 2.7871  val 2.7813  grad 0.30
+step 37500/40000  train 2.7434  train (fixed) 2.7854  val 2.7799  grad 0.30
+step 38000/40000  train 2.7446  train (fixed) 2.7862  val 2.7801  grad 0.30
+11/16 valid
+  samples @ 38000: valid+connected 0.61  validity 0.77  connected 0.81  vun 0.50  bonds/mol 9.2
+step 38500/40000  train 2.7449  train (fixed) 2.7881  val 2.7822  grad 0.31
+step 39000/40000  train 2.7359  train (fixed) 2.7858  val 2.7792  grad 0.31
+step 39500/40000  train 2.7446  train (fixed) 2.7873  val 2.7817  grad 0.30
+step 40000/40000  train 2.7472  train (fixed) 2.7851  val 2.7789  grad 0.31
+13/16 valid
+  samples @ 40000: valid+connected 0.64  validity 0.76  connected 0.86  vun 0.55  bonds/mol 9.5

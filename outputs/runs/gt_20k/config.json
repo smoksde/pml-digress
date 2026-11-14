@@ -1,0 +1,41 @@
+{
+  "run_name": "gt_20k",
+  "steps": 20000,
+  "lr": 0.001,
+  "batch_size": 64,
+  "seed": 0,
+  "eval_interval": 1000,
+  "edge_loss_weight": 5.0,
+  "grad_clip": 10.0,
+  "eval_samples": 1000,
+  "log_interval": 200,
+  "diffusion_steps": 200,
+  "model": {
+    "type": "simple_graph_transformer",
+    "params": {
+      "time_dim": 64,
+      "y_dim": 0
+    }
+  },
+  "label_property": null,
+  "max_atoms": 9,
+  "subset_size": 10000,
+  "train_molecules": 8100,
+  "val_molecules": 900,
+  "test_molecules": 1000,
+  "parameters": 408968,
+  "train_bonds_per_mol": 9.305061340332031,
+  "resumed_from_step": 0,
+  "python": "3.10.22",
+  "torch": "2.0.1+cu118",
+  "torch_geometric": "2.8.1",
+  "rdkit": "2023.03.2",
+  "device": "NVIDIA GeForce RTX 3090",
+  "slurm_job_id": "5221619",
+  "host": "head055",
+  "git": {
+    "commit": "1168bcde34befe89289d4d667bbb318d755076c8",
+    "branch": "main",
+    "dirty": false
+  }
+}
