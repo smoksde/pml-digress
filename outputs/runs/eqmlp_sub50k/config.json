@@ -1,0 +1,41 @@
+{
+  "run_name": "eqmlp_sub50k",
+  "steps": 40000,
+  "lr": 0.001,
+  "batch_size": 256,
+  "seed": 0,
+  "eval_interval": 2000,
+  "edge_loss_weight": 5.0,
+  "grad_clip": 10.0,
+  "eval_samples": 1000,
+  "log_interval": 500,
+  "diffusion_steps": 200,
+  "model": {
+    "type": "equivariant_mlp",
+    "params": {
+      "time_dim": 64,
+      "y_dim": 0
+    }
+  },
+  "label_property": null,
+  "max_atoms": 9,
+  "subset_size": 50000,
+  "train_molecules": 40500,
+  "val_molecules": 4500,
+  "test_molecules": 5000,
+  "parameters": 224520,
+  "train_bonds_per_mol": 9.301876068115234,
+  "resumed_from_step": 0,
+  "python": "3.10.22",
+  "torch": "2.0.1+cu118",
+  "torch_geometric": "2.8.1",
+  "rdkit": "2023.03.2",
+  "device": "NVIDIA A100 80GB PCIe",
+  "slurm_job_id": "5222206",
+  "host": "head025",
+  "git": {
+    "commit": "449eca97c98a6f17d9a2c7ea509f8d932385c7a9",
+    "branch": "main",
+    "dirty": false
+  }
+}
