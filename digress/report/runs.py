@@ -173,10 +173,7 @@ def comparison_table(runs, baselines=None):
         rows += [(b["name"], "-", *(f"{b[k]:.3f}" for k, _ in COMPARISON)) for b in baselines["baselines"].values()]
     if not rows:
         return None
-    return Table("test_comparison", "Sample quality on the test split: trained models versus non-learned baselines.",
+    return Table("test_comparison", "Sample quality on the test split, 1,000 samples per generator.",
                  ("Generator", "Test loss", *(label for _, label in COMPARISON)), rows,
-                 ("Models: best.pt (lowest validation loss) scored once by digress.cli.evaluate_test; baselines: "
-                  "digress.cli.evaluate_baselines. VUN: share of samples that are valid, connected, unique and novel. TV: "
-                  "total variation distance to the test molecules (0 = identical distributions, 1 = no overlap) of atom "
-                  "types, bond types and (element, valence) pairs. Uniqueness and the atom-count TV are omitted: the "
-                  "first is close to 1 for all generators, the second is fixed by sampling the size from the data.",))
+                 ("Models use the checkpoint with the lowest validation loss. VUN: valid, connected, unique and novel; "
+                  "TV: total variation distance to the test molecules (0 = identical).",))
