@@ -14,7 +14,6 @@ LABEL_PROPERTY = os.environ.get("LABEL_PROPERTY") or None
 # Paths
 CACHE_PATH = OUTPUT_DIR / "cache" / "qm9_cache.pt"
 RUNS_DIR = OUTPUT_DIR / "runs"
-PLOTS_DIR = OUTPUT_DIR / "plots"
 BASELINES_DIR = OUTPUT_DIR / "baselines"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

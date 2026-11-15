@@ -18,7 +18,7 @@ from digress.config import (
     VAL_FRACTION,
 )
 from digress.data.chem import ATOM_LIST, flat_smiles, mol_to_graph
-from digress.data.graphs import adj_to_edge_vector
+from digress.data.graphs import adj_to_edge_vector, edge_vector_to_adj
 
 CACHE_VERSION = 2
 SKIP_REASONS = (
@@ -148,6 +148,9 @@ class GraphDataset:
             self.edge_vecs[idx],
             (self.y[idx] if self.y is not None else None),
         )
+
+    def graphs(self, idx):
+        return self.atoms[idx], edge_vector_to_adj(self.edge_vecs[idx], MAX_ATOMS), self.masks[idx]
 
     def sample_batch(self, batch_size):
         return self.batch(

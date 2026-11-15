@@ -79,11 +79,7 @@ def split_loss(run, edge_weight, idx, prefix, batch_size=500, by_t=True):
 
 
 def reference_histograms(data, idx):
-    return graph_histograms(
-        data.atoms[idx],
-        edge_vector_to_adj(data.edge_vecs[idx], MAX_ATOMS),
-        data.masks[idx],
-    )
+    return graph_histograms(*data.graphs(idx))
 
 
 def sample_quality(run, n=EVAL_SAMPLES, ref_idx=None):

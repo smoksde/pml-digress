@@ -39,10 +39,25 @@ def denoising_metrics(run, idx, batch_size=500):
 
 
 def denoising_table(results):
-    rows = [(k, *(f"{r[p][m]:.3f}" for p in ("atoms", "bonds") for m in ("accuracy", "balanced_accuracy")),
-             f"{r['bonds']['macro_f1']:.3f}", *(f"{v:.2f}" for v in r["bonds"]["recall"]),
-             *(f"{v:.2f}" for v in r["atoms"]["recall"])) for k, r in results.items()]
+    rows = [(k, f"{r['bonds']['accuracy']:.2f}", f"{r['bonds']['balanced_accuracy']:.2f}",
+             *(f"{v:.2f}" for v in r["bonds"]["recall"][1:]), f"{r['atoms']['balanced_accuracy']:.2f}")
+            for k, r in results.items()]
     return Table("denoising", "Clean-graph prediction on the test split by noise level.",
-                 ("t", "Atom acc", "Atom bAcc", "Bond acc", "Bond bAcc", "Bond mF1",
-                  *(f"R {b}" for b in BOND_LABELS), *(f"R {a}" for a in ATOM_LIST)), rows,
-                 ("acc: accuracy; bAcc: balanced accuracy (mean per-class recall); mF1: macro-F1; R: recall per class.",))
+                 ("t", "Bond acc", "Bond bAcc", *(f"R {b}" for b in BOND_LABELS[1:]), "Atom bAcc"), rows,
+                 ("acc: accuracy; bAcc: balanced accuracy (mean recall over classes); R: recall of a bond class. "
+                  "Recall per atom type is shown in the recall figure; all metrics are in test_results.json.",))
+
+
+def _per_entry_ce(marginal, alpha_bar):
+    m = marginal.double().cpu()
+    p_z_x = alpha_bar * torch.eye(len(m), dtype=torch.double) + (1 - alpha_bar) * m[None]
+    post = m[:, None] * p_z_x
+    post = post / post.sum(0, keepdim=True)
+    return -(m[:, None] * p_z_x * post.clamp(min=1e-12).log()).sum().item()
+
+
+def per_entry_reference(run, edge_weight, ts):
+    def loss(a):
+        return _per_entry_ce(run.atom_diffusion.m, a) + edge_weight * _per_entry_ce(run.bond_diffusion.m, a)
+
+    return {f"t{t}": loss(run.atom_diffusion.alpha_bars[t - 1].item()) for t in ts}, loss(0.0)

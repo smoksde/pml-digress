@@ -2,12 +2,14 @@ import argparse
 import json
 from pathlib import Path
 
+import torch
+
 from digress.config import EDGE_LOSS_WEIGHT, EVAL_SAMPLES
 from digress.data.dataset import get_dataset
 from digress.training.checkpoint import build_run, load_checkpoint
-from digress.evaluation.denoising import denoising_metrics, denoising_table
+from digress.evaluation.denoising import denoising_metrics, denoising_table, per_entry_reference
 from digress.report.tables import format_table
-from digress.training.loop import _evaluating, sample_quality, split_loss
+from digress.training.loop import VAL_TS, _evaluating, sample_quality, split_loss
 
 
 def _edge_weight(run_dir, override):
@@ -49,7 +51,8 @@ def main():
     data = get_dataset()
 
     (loss, atom, bond), per_t = split_loss(run, edge_weight, data.test_idx, "test")
-    samples, _ = sample_quality(run, args.n, data.test_idx)
+    samples, (atoms, adj, mask) = sample_quality(run, args.n, data.test_idx)
+    reference, floor = per_entry_reference(run, edge_weight, VAL_TS)
     with _evaluating(run.model):
         denoising = denoising_metrics(run, data.test_idx)
     results = {
@@ -64,6 +67,8 @@ def main():
         **per_t,
         "samples": {"n": args.n, **samples},
         "denoising": denoising,
+        "per_entry_reference": reference,
+        "marginal_floor": floor,
     }
 
     print(
@@ -81,6 +86,7 @@ def main():
 
     out = args.out or run_dir / "test_results.json"
     out.write_text(json.dumps(results, indent=2))
+    torch.save({"atoms": atoms, "adj": adj, "mask": mask}, out.with_name("test_samples.pt"))
     print(f"wrote {out}")
 
 

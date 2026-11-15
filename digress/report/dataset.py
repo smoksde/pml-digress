@@ -3,27 +3,14 @@ import math
 from pathlib import Path
 
 from digress import config
-from digress.config import MAX_ATOMS
 from digress.data import stats
 from digress.data.stats import REASON_LABELS, UNITS
 from digress.evaluation.similarity import FP_BITS, FP_RADIUS, THRESHOLDS, similarity_summary
 from digress.report.runinfo import run_info
-from digress.report.style import BLUE, FULL_WIDTH, HALF_WIDTH, INK, INK_2, MUTED, ORANGE, figure, save
-from digress.report.tables import Table, format_table, table_to_latex
+from digress.report.style import BLUE, FULL_WIDTH, HALF_WIDTH, INK, INK_2, MUTED, ORANGE, figure, save_figures
+from digress.report.tables import Table, fmt_count as _count, fmt_n as _n, fmt_pct as _pct, format_table, write_tables
 
 SETTINGS = ("MAX_ATOMS", "QM9_SUBSET_SIZE", "TRAIN_FRACTION", "VAL_FRACTION", "RANDOM_SEED", "LABEL_PROPERTY")
-
-
-def _n(x):
-    return f"{x:,}"
-
-
-def _pct(share):
-    return f"{100 * share:.1f}%"
-
-
-def _count(n, share):
-    return f"{_n(n)} ({_pct(share)})"
 
 
 def scan_tables(scan):
@@ -35,21 +22,6 @@ def scan_tables(scan):
                      (f"{_n(explicit_h)} of the skipped molecules ({_pct(explicit_h / total)}) fail only because RDKit kept an "
                       "explicit H (stereo C=N-H imines) when parsing.",))
 
-    rows, above = stats.atom_count_table(scan)
-    n_usable = sum(r[2] for r in rows)
-    atoms = Table("atom_counts", "Atoms per molecule after parsing.", ("Atoms", "Parsed", "Usable", "Share of usable"),
-                  [(n, _n(p), _n(u), _pct(u / n_usable)) for n, p, u in rows] + [(f">{MAX_ATOMS}", _n(above), "0", "-")])
-
-    elements = Table("elements", "Element composition of usable molecules.",
-                     ("Element", "Atoms", "Share of atoms", "Share of molecules"),
-                     [(el, _n(n), _pct(a), _pct(m)) for el, n, a, m in stats.element_table(scan)])
-
-    bond_rows, per_molecule = stats.bond_table(scan)
-    bonds = Table("bonds", "Bond types of usable molecules (Kekule form).", ("Bond", "Count", "Share"),
-                  [(n, _n(c), _pct(s)) for n, c, s in bond_rows], (f"{per_molecule:.1f} bonds per molecule.",))
-    rings = Table("rings", "Rings per usable molecule.", ("Rings", "Molecules", "Share"),
-                  [(k, _n(c), _pct(s)) for k, c, s in stats.ring_table(scan)])
-
     smiles, flat = stats.usable_values(scan, scan.smiles), stats.usable_values(scan, scan.smiles_flat)
     stereo = sum(any(c in s for c in "@/\\") for s in smiles)
     duplicates = Table("duplicates", "Unique and duplicate usable molecules.", ("Identity", "Unique", "Duplicates"),
@@ -59,13 +31,13 @@ def scan_tables(scan):
 
     summaries = [stats.summarize_target(scan, name) for name in UNITS]
     targets = Table("targets", "QM9 regression targets over usable molecules.",
-                    ("Target", "Unit", "Mean", "Std", "Min", "Median", "Max", "Skew", "Outliers"),
-                    [(s.name, UNITS[s.name], f"{s.mean:.3g}", f"{s.std:.3g}", f"{s.minimum:.3g}", f"{s.median:.3g}",
-                      f"{s.maximum:.3g}", f"{s.skew:+.2f}", _count(s.outliers, s.share)) for s in summaries],
+                    ("Target", "Unit", "Mean", "Std", "Median", "Skew", "Outliers"),
+                    [(s.name, UNITS[s.name], f"{s.mean:.3g}", f"{s.std:.3g}", f"{s.median:.3g}", f"{s.skew:+.2f}",
+                      _count(s.outliers, s.share)) for s in summaries],
                     (f"Outliers: robust z-score |x - median| / (1.4826 MAD) > {stats.ROBUST_Z:g}. Total energies "
                      "(u0, u, h, g) are nearly identical to each other and scale with molecule size, so their tails "
                      "mostly reflect composition, not errors.",))
-    return [overview, atoms, elements, bonds, rings, duplicates, targets]
+    return [overview, duplicates, targets]
 
 
 def split_tables(c):
@@ -77,9 +49,10 @@ def split_tables(c):
                     ("atom-count distance to full set (TV)", f"{c.atom_count_distance:.4f}")])
 
     properties = Table("properties", "QM9 targets: full usable set versus training subset.",
-                       ("Property", "Full mean", "Full std", "Subset mean", "Subset std", "Shift (full std)"),
-                       [(p.name, f"{p.full_mean:.3f}", f"{p.full_std:.3f}", f"{p.subset_mean:.3f}",
-                         f"{p.subset_std:.3f}", f"{p.shift:+.3f}") for p in c.property_shifts])
+                       ("Property", "Full mean", "Subset mean", "Shift"),
+                       [(p.name, f"{p.full_mean:.3f}", f"{p.subset_mean:.3f}", f"{p.shift:+.3f}")
+                        for p in c.property_shifts],
+                       ("Shift: difference of the means in units of the full set's standard deviation.",))
 
     test, base = similarity_summary(c.test_similarity), similarity_summary(c.baseline_similarity)
     rows = [("median similarity", f"{test['median']:.2f}", f"{base['median']:.2f}"),
@@ -110,7 +83,7 @@ def _bars(ax, labels, values, texts, title, ylabel, offset=0.0, width=0.7, color
     for bar, text in zip(bars, texts):
         if text:
             ax.annotate(text, (bar.get_x() + bar.get_width() / 2, bar.get_height()), xytext=(0, 3),
-                        textcoords="offset points", ha="center", color=INK_2, fontsize=7.5)
+                        textcoords="offset points", ha="center", color=INK_2, fontsize=6.5)
     ax.set_xticks(range(len(labels)), [str(l) for l in labels])
     ax.set_ylabel(ylabel)
     ax.set_title(title)
@@ -128,14 +101,14 @@ def filter_funnel(results):
     for bar, (_, remaining, removed) in zip(bars, rows):
         y = bar.get_y() + bar.get_height() / 2
         ax.annotate(f"{remaining:,}  ({100 * remaining / scan.total:.1f}%)", (remaining, y), xytext=(-4, 0),
-                    textcoords="offset points", ha="right", va="center", color="white", fontsize=7.5)
+                    textcoords="offset points", ha="right", va="center", color="white", fontsize=6.5)
         if removed:
             ax.annotate(f"−{removed:,} ({100 * removed / scan.total:.1f}%)", (scan.total, y), xytext=(4, 0),
-                        textcoords="offset points", ha="left", va="center", color=INK_2, fontsize=7.5)
+                        textcoords="offset points", ha="left", va="center", color=INK_2, fontsize=6.5)
     ax.set_xlim(0, scan.total)
     ax.set_xticks([])
     ax.spines["bottom"].set_visible(False)
-    ax.set_title("QM9 molecules remaining after each filter step (removed by the step on the right)")
+    ax.set_title("Molecules remaining after each filter step (right: removed by the step)")
     return fig
 
 
@@ -186,10 +159,10 @@ def target_distributions(results):
         for fence in (s.low_fence, s.high_fence):
             if x.min() <= fence <= x.max():
                 ax.axvline(fence, color=INK, lw=0.8, ls="--")
-        ax.set_title(f"{name} [{stats.PRETTY_UNITS[name]}] · {s.outliers:,} outliers", fontsize=7.5)
-        ax.tick_params(labelsize=6.5)
+        ax.set_title(f"{name} [{stats.PRETTY_UNITS[name]}] · {s.outliers:,} outliers", fontsize=6.5)
+        ax.tick_params(labelsize=6)
     fig.suptitle(f"QM9 targets over usable molecules (log counts; dashed: outlier fences, robust |z| = {stats.ROBUST_Z:g})",
-                 x=0.01, ha="left", fontsize=9, fontweight="bold")
+                 x=0.01, ha="left", fontsize=7.5, fontweight="bold")
     fig.tight_layout()
     return fig
 
@@ -205,9 +178,7 @@ def near_duplicates(results):
         ax.step(x, [(i + 1) / len(x) for i in range(len(x))], where="post", color=color, lw=1.6, ls=style, label=label)
     for t in THRESHOLDS[:-1]:
         ax.axvline(t, color=MUTED, lw=0.8)
-        ax.text(t, 0.04, f" {t}", color=INK_2, fontsize=7)
-    ax.text(0.02, 0.62, "curves overlap: test is no\ncloser to train than train\nis to itself", transform=ax.transAxes,
-            fontsize=7, color=INK_2, va="top")
+        ax.text(t, 0.04, f" {t}", color=INK_2, fontsize=6)
     ax.set_xlabel("Tanimoto similarity to nearest train molecule")
     ax.set_ylabel("cumulative share")
     ax.set_xlim(0, 1.02)
@@ -222,15 +193,8 @@ FIGURES = (filter_funnel, atom_counts, elements, bonds_and_rings, target_distrib
 
 def export_all(results, tables, out_dir):
     out = Path(out_dir)
-    (out / "tables").mkdir(parents=True, exist_ok=True)
-    for t in tables:
-        (out / "tables" / f"{t.name}.tex").write_text(table_to_latex(t))
-    n_figures = 0
-    for make in FIGURES:
-        fig = make(results)
-        if fig is not None:
-            save(fig, out / "figures" / f"{make.__name__}.pdf")
-            n_figures += 1
+    write_tables(tables, out)
+    n_figures = len(save_figures(FIGURES, results, out))
     (out / "report.txt").write_text(render_report(tables) + "\n")
     settings = {k: getattr(config, k) for k in SETTINGS}
     (out / "run.json").write_text(json.dumps({**run_info(), "settings": settings}, indent=2) + "\n")

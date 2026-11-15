@@ -6,7 +6,7 @@ from rdkit import RDLogger
 
 RDLogger.DisableLog("rdApp.*")
 
-from digress.data.chem import NUM_ATOM_TYPES, NUM_BOND_TYPES, build_mol, flat_smiles
+from digress.data.chem import ATOM_LIST, MAX_VALENCE, NUM_ATOM_TYPES, NUM_BOND_TYPES, build_mol, flat_smiles, graph_to_mol
 
 
 def evaluate(atoms, bonds, masks, train_smiles_flat):
@@ -66,3 +66,13 @@ def graph_histograms(atoms, adj, mask):
 
 def distribution_distances(generated, reference):
     return {f"tv_{k}": _tv(generated[k], reference[k]) for k in reference}
+
+
+def failure_breakdown(atoms, adj, mask):
+    atoms, adj, mask = atoms.cpu(), adj.cpu(), mask.cpu().bool()
+    over = ((adj * (mask[:, :, None] & mask[:, None, :])).sum(-1) > torch.tensor(MAX_VALENCE)[atoms]) & mask
+    valid = torch.tensor([graph_to_mol(a, b, m) is not None for a, b, m in zip(atoms, adj, mask)])
+    return {
+        "violation_rate": {el: over[mask & (atoms == k)].float().mean().item() for k, el in enumerate(ATOM_LIST)},
+        "valid": valid.tolist(),
+    }

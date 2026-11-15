@@ -1,5 +1,6 @@
 import re
 from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -9,6 +10,18 @@ class Table:
     header: tuple
     rows: list
     notes: tuple = ()
+
+
+def fmt_n(x):
+    return f"{x:,}"
+
+
+def fmt_pct(share):
+    return f"{100 * share:.1f}%"
+
+
+def fmt_count(n, share):
+    return f"{fmt_n(n)} ({fmt_pct(share)})"
 
 
 def format_table(table, indent="  "):
@@ -36,3 +49,11 @@ def table_to_latex(t, prefix="qm9-"):
              *(" & ".join(map(escape, row)) + " \\\\" for row in t.rows), "\\bottomrule", "\\end{tabular}",
              f"\\caption{{{escape(' '.join((t.caption, *t.notes)))}}}", f"\\label{{tab:{prefix}{t.name}}}", "\\end{table}", ""]
     return "\n".join(lines)
+
+
+def write_tables(tables, out_dir, prefix="qm9-"):
+    out = Path(out_dir) / "tables"
+    out.mkdir(parents=True, exist_ok=True)
+    for t in tables:
+        if t is not None:
+            (out / f"{t.name}.tex").write_text(table_to_latex(t, prefix))
