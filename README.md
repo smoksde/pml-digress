@@ -33,3 +33,11 @@ cd outputs && zip -r report_assets.zip report_assets
 ```
 
 `report_runs` reads the results of `evaluate_test` and `evaluate_baselines`, so run those first.
+
+## Branch begin_ms2
+
+Refactor/ extension of MS1 code with the MOSES dataset, already placed at /home/space/datasets/moses on cluster.
+Still have to test out some changes, new DataInfo obj/class exposing some params like atoms, valences, atom weights, max atoms, aromatic bonds
+or not (for MOSES). New moses dataset py file, addition of uniform transition model to marginal transitions (enable second/ other dataset,
+batched sampling, sampling change for unifrom support(using each diffusio's own limit dist. instead of data marginal to supoprt uniform).
+digress model w/o the spectral/ structural features for now, train changes regarding logging/confifgs, train_apply module as required by task sheet. some more evals, ...
