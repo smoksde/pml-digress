@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=prep_data
-#SBATCH --partition=gpu-teaching-2h
-#SBATCH --gpus-per-node=1
+#SBATCH --partition=cpu-2h
+#SBATCH --gpus-per-node=0
 #SBATCH --cpus-per-task=8
 #SBATCH --output=logs/%x_%j.out
 
