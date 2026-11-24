@@ -50,9 +50,9 @@ returns generated test-time samples plus test metrics; every other argument has 
 ```python
 from train_apply import train_apply
 out = train_apply("digress", "qm9")                       # paper setting
-out = train_apply("digress", "qm9", transition="uniform") # noise-model ablation
+out = train_apply("digress", "qm9", transition="uniform") # noise model ablation
 out = train_apply("digress", "qm9", node_index_features=True)  # without permutation equivariance
-out = train_apply("mlp", "qm9")                           # Milestone-1 denoiser in the same pipeline
+out = train_apply("mlp", "qm9")                           # Milestone 1 denoiser in the same pipeline
 ```
 
 ### Datasets
