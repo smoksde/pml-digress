@@ -1,3 +1,7 @@
+"""
+changes: logs relaxed validity, uses a run's info.
+"""
+
 import csv
 import json
 import time
@@ -15,6 +19,7 @@ SAMPLE_FIELDS = [
     "novelty",
     "vun",
     "fail_valence",
+    "relaxed_validity",
     "fail_other",
     "bonds_per_mol",
     "tv_n_atoms",
@@ -69,8 +74,8 @@ class CsvLog:
 
 class RunLogger:
 
-    def __init__(self, run_dir, start_step, val_ts):
-        self.run_dir = run_dir
+    def __init__(self, run_dir, start_step, val_ts, info=None):
+        self.run_dir, self.info = run_dir, info
         (run_dir / "samples").mkdir(parents=True, exist_ok=True)
         self.metrics = CsvLog(
             run_dir / "metrics.csv", metric_fields(val_ts), start_step
@@ -130,12 +135,12 @@ class RunLogger:
             from digress.report.molecules import show
 
             atoms, adj, mask = (x[:16] for x in samples)
-            show(atoms, adj, mask, outfile=self.run_dir / "samples" / f"step_{step:06d}.png")
+            show(atoms, adj, mask, outfile=self.run_dir / "samples" / f"step_{step:06d}.png", info=self.info)
         except (RuntimeError, ImportError) as err:
             print(f"  could not draw samples: {err}", flush=True)
         self.samples.write({"step": step, **{k: scores[k] for k in SAMPLE_FIELDS[1:]}})
         print(
             f"  samples @ {step}: valid+connected {scores['valid_connected']:.2f}  validity {scores['validity']:.2f}  "
-            f"connected {scores['connected']:.2f}  vun {scores['vun']:.2f}  bonds/mol {scores['bonds_per_mol']:.1f}",
+            f"connected {scores['connected']:.2f}  relaxed {scores['relaxed_validity']:.2f}  vun {scores['vun']:.2f}  bonds/mol {scores['bonds_per_mol']:.1f}",
             flush=True,
         )

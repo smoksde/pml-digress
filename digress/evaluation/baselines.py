@@ -1,23 +1,28 @@
+"""
+changes: use load_run() and info
+"""
+
 import random
 
 import torch
 
-from digress.config import HEURISTIC_P_RING, HEURISTIC_P_UPGRADE, MAX_ATOMS, RANDOM_SEED
-from digress.data.chem import MAX_VALENCE
+from digress.config import HEURISTIC_P_RING, HEURISTIC_P_UPGRADE, RANDOM_SEED
+from digress.data.info import QM9
 from digress.data.graphs import edge_vector_to_adj
 from digress.diffusion.sampling import _init_xt
 
 MAX_REDRAWS = 1000
 
 
-def sample_prior(marginals, num_samples, seed=RANDOM_SEED):
+def sample_prior(marginals, num_samples, info=QM9, seed=RANDOM_SEED):
     torch.manual_seed(seed)
-    atoms, bonds, mask, _ = _init_xt(marginals, num_samples)
-    return atoms.cpu(), edge_vector_to_adj(bonds, MAX_ATOMS).cpu(), mask.cpu()
+    atoms, bonds, mask, _ = _init_xt(marginals["atom_marginal"], marginals["bond_marginal"],
+                                     marginals["atom_count_dist"], num_samples, info)
+    return atoms.cpu(), edge_vector_to_adj(bonds, info.max_atoms).cpu(), mask.cpu()
 
 
-def _spanning_tree(atom_types, rng):
-    free = [MAX_VALENCE[a] for a in atom_types]
+def _spanning_tree(atom_types, rng, max_valence):
+    free = [max_valence[a] for a in atom_types]
     order = sorted(range(len(atom_types)), key=lambda k: -free[k])
     placed, bonds = [order[0]], {}
     for k in order[1:]:
@@ -32,12 +37,12 @@ def _spanning_tree(atom_types, rng):
     return bonds, free
 
 
-def _heuristic_molecule(n, atom_marginal, rng, gen, p_upgrade, p_ring):
+def _heuristic_molecule(n, atom_marginal, rng, gen, p_upgrade, p_ring, max_valence):
     for _ in range(MAX_REDRAWS):
         atom_types = torch.multinomial(
             atom_marginal, n, replacement=True, generator=gen
         ).tolist()
-        tree = _spanning_tree(atom_types, rng)
+        tree = _spanning_tree(atom_types, rng, max_valence)
         if tree is not None:
             break
     else:
@@ -70,6 +75,7 @@ def _heuristic_molecule(n, atom_marginal, rng, gen, p_upgrade, p_ring):
 def sample_valence_heuristic(
     marginals,
     num_samples,
+    info=QM9,
     seed=RANDOM_SEED,
     p_upgrade=HEURISTIC_P_UPGRADE,
     p_ring=HEURISTIC_P_RING,
@@ -79,12 +85,13 @@ def sample_valence_heuristic(
     counts = torch.multinomial(
         marginals["atom_count_dist"].cpu(), num_samples, replacement=True, generator=gen
     )
-    atoms = torch.zeros(num_samples, MAX_ATOMS, dtype=torch.long)
-    adj = torch.zeros(num_samples, MAX_ATOMS, MAX_ATOMS, dtype=torch.long)
-    mask = torch.zeros(num_samples, MAX_ATOMS, dtype=torch.bool)
+    n_max = info.max_atoms
+    atoms = torch.zeros(num_samples, n_max, dtype=torch.long)
+    adj = torch.zeros(num_samples, n_max, n_max, dtype=torch.long)
+    mask = torch.zeros(num_samples, n_max, dtype=torch.bool)
     for s, n in enumerate(counts.tolist()):
         atom_types, bonds = _heuristic_molecule(
-            n, atom_marginal, rng, gen, p_upgrade, p_ring
+            n, atom_marginal, rng, gen, p_upgrade, p_ring, info.max_valence
         )
         atoms[s, :n] = torch.tensor(atom_types)
         mask[s, :n] = True

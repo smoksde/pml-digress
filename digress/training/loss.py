@@ -1,8 +1,10 @@
+"""
+changes: class counts from run.info, label normalization from run.data
+"""
+
 import torch.nn.functional as F
 
 from digress.config import DEVICE
-from digress.data.chem import NUM_ATOM_TYPES, NUM_BOND_TYPES
-from digress.data.dataset import get_dataset
 from digress.data.graphs import edge_mask_from_nodes
 from digress.diffusion.discrete import noise_graph
 from digress.models.conditioning import normalize
@@ -23,13 +25,12 @@ def compute_loss(atom_logits, bond_logits, atoms0, bonds0, node_mask, edge_mask,
 
 def predict(run, batch, t):
     atoms0, mask0, bonds0, y0 = (None if v is None else v.to(DEVICE) for v in batch)
-    X0 = F.one_hot(atoms0, NUM_ATOM_TYPES).float()
-    E0 = F.one_hot(bonds0, NUM_BOND_TYPES).float()
+    X0 = F.one_hot(atoms0, run.info.num_atom_types).float()
+    E0 = F.one_hot(bonds0, run.info.num_bond_types).float()
     X, E = noise_graph(X0, E0, mask0, t, run.atom_diffusion, run.bond_diffusion)
     y_in = None
     if run.model.y_dim:
-        data = get_dataset()
-        y_in = normalize(y0, data.y_mean, data.y_std)
+        y_in = normalize(y0, run.data.y_mean, run.data.y_std)
     atom_logits, bond_logits = run.model(X, E, y_in, t)
     return atom_logits, bond_logits, atoms0, bonds0, mask0, edge_mask_from_nodes(mask0)
 

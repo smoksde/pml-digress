@@ -1,3 +1,8 @@
+"""
+changes: shapes come from info now, sampling in batches (SAMPLE_BATCH_SIZE).
+z_T from each own diffusion's limit dist. for supporting also uniform alongside marginal.
+"""
+
 import torch
 import torch.nn.functional as F
 

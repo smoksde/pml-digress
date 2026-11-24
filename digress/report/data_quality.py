@@ -9,6 +9,7 @@ from rdkit.Chem import rdDetermineBonds
 
 from digress.config import DATA_DIR, DIFFUSION_STEPS, MAX_ATOMS, RANDOM_SEED
 from digress.data.chem import ATOM_LIST, NUM_ATOM_TYPES, NUM_BOND_TYPES, flat_smiles, mol_to_graph
+from digress.data.info import QM9
 from digress.data.graphs import edge_vector_to_adj
 from digress.data.marginals import bootstrap_stats
 from digress.diffusion.discrete import DiscreteDiffusion, noise_graph
@@ -62,7 +63,7 @@ def neutralized(mol):
 
 def _graph(mol):
     try:
-        atoms, mask, adj = mol_to_graph(mol, MAX_ATOMS)
+        atoms, mask, adj = mol_to_graph(mol, QM9)
         return atoms, adj, mask
     except Exception:
         return None
@@ -154,11 +155,11 @@ def encoding_figure(data):
 
 
 def forward_noising(data, index, outfile, steps=8):
-    atom_marginal, bond_marginal, _ = bootstrap_stats(NUM_ATOM_TYPES, NUM_BOND_TYPES)
+    atom_marginal, bond_marginal, _ = bootstrap_stats(data)
     i = data.train_idx[index]
     ts = torch.linspace(0, DIFFUSION_STEPS, steps).round().long()
-    X0 = F.one_hot(data.atoms[i], NUM_ATOM_TYPES).float().expand(steps, -1, -1)
-    E0 = F.one_hot(data.edge_vecs[i], NUM_BOND_TYPES).float().expand(steps, -1, -1)
+    X0 = F.one_hot(data.atoms[i].long(), NUM_ATOM_TYPES).float().expand(steps, -1, -1)
+    E0 = F.one_hot(data.edge_vecs[i].long(), NUM_BOND_TYPES).float().expand(steps, -1, -1)
     mask = data.masks[i].expand(steps, -1)
     torch.manual_seed(RANDOM_SEED)
     X, E = noise_graph(X0, E0, mask, ts.clamp(min=1), DiscreteDiffusion(atom_marginal, DIFFUSION_STEPS),

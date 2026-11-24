@@ -1,15 +1,16 @@
+"""
+changes/ see cli/commmon.py:; also for cli/sample.py, cli/evaluate_baseline.py cli/export_smiles.py
+"""
+
 import argparse
 import json
 from pathlib import Path
 
-import torch
-
-from digress.config import EDGE_LOSS_WEIGHT, EVAL_SAMPLES
-from digress.data.dataset import get_dataset
-from digress.training.checkpoint import build_run, load_checkpoint
-from digress.evaluation.denoising import denoising_metrics, denoising_table, per_entry_reference
+from digress.config import EDGE_LOSS_WEIGHT, EVAL_SAMPLES, REFERENCE_SIZE, TEST_EVAL_SIZE
+from digress.evaluation.denoising import denoising_table
+from digress.evaluation.test import evaluate_run, save_samples
 from digress.report.tables import format_table
-from digress.training.loop import VAL_TS, _evaluating, sample_quality, split_loss
+from digress.training.checkpoint import load_run
 
 
 def _edge_weight(run_dir, override):
@@ -23,70 +24,39 @@ def _edge_weight(run_dir, override):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "checkpoint", type=Path, help="e.g. outputs/runs/my_run/checkpoints/best.pt"
-    )
-    parser.add_argument(
-        "-n",
-        type=int,
-        default=EVAL_SAMPLES,
-        help="molecules to sample for sample quality",
-    )
-    parser.add_argument(
-        "--edge-loss-weight",
-        type=float,
-        help="default: the value from the run's config.json",
-    )
-    parser.add_argument(
-        "--out", type=Path, help="default: test_results.json in the run folder"
-    )
+    parser.add_argument("checkpoint", type=Path, help="e.g. outputs/runs/my_run/checkpoints/best.pt")
+    parser.add_argument("-n", type=int, default=EVAL_SAMPLES, help="molecules to sample for sample quality")
+    parser.add_argument("--max-test", type=int, default=TEST_EVAL_SIZE,
+                        help="cap on test molecules for test loss / denoising metrics")
+    parser.add_argument("--reference-size", type=int, default=REFERENCE_SIZE,
+                        help="test molecules used as reference for SNN / Frag / Scaf / FCD")
+    parser.add_argument("--no-distribution", action="store_true", help="skip SNN / Frag / Scaf / FCD / Filters")
+    parser.add_argument("--edge-loss-weight", type=float, help="default: the value from the run's config.json")
+    parser.add_argument("--out", type=Path, help="default: test_results.json in the run folder")
     args = parser.parse_args()
 
-    ckpt = load_checkpoint(args.checkpoint)
-    if ckpt is None:
-        raise FileNotFoundError(args.checkpoint)
+    ckpt, run = load_run(args.checkpoint)
     run_dir = args.checkpoint.resolve().parent.parent
     edge_weight = _edge_weight(run_dir, args.edge_loss_weight)
-    run = build_run(ckpt, lr=0.0)
-    data = get_dataset()
+    results, (atoms, adj, mask), smiles = evaluate_run(run, edge_weight, args.n, args.max_test,
+                                                       not args.no_distribution, args.reference_size)
+    results = {"checkpoint": str(args.checkpoint), "step": ckpt["step"], "best_val_loss": ckpt.get("best_val"),
+               **results}
 
-    (loss, atom, bond), per_t = split_loss(run, edge_weight, data.test_idx, "test")
-    samples, (atoms, adj, mask) = sample_quality(run, args.n, data.test_idx)
-    reference, floor = per_entry_reference(run, edge_weight, VAL_TS)
-    with _evaluating(run.model):
-        denoising = denoising_metrics(run, data.test_idx)
-    results = {
-        "checkpoint": str(args.checkpoint),
-        "step": ckpt["step"],
-        "best_val_loss": ckpt.get("best_val"),
-        "n_test": len(data.test_idx),
-        "edge_loss_weight": edge_weight,
-        "test_loss": loss,
-        "test_atom": atom,
-        "test_bond": bond,
-        **per_t,
-        "samples": {"n": args.n, **samples},
-        "denoising": denoising,
-        "per_entry_reference": reference,
-        "marginal_floor": floor,
-    }
-
-    print(
-        f"checkpoint step {results['step']}  |  val loss {results['best_val_loss']:.4f}  |  "
-        f"test loss {loss:.4f} (atom {atom:.4f}, bond {bond:.4f})  on {len(data.test_idx)} test molecules"
-    )
-    print(
-        "test loss by t: "
-        + "  ".join(f"{k.removeprefix('test_')} {v:.3f}" for k, v in per_t.items())
-    )
-    print(
-        "samples: " + "  ".join(f"{k} {v:.3f}" for k, v in samples.items() if k != "n")
-    )
-    print("\n".join(format_table(denoising_table(denoising))))
+    print(f"checkpoint step {results['step']}  |  val loss {results['best_val_loss']:.4f}  |  test loss "
+          f"{results['test_loss']:.4f} (atom {results['test_atom']:.4f}, bond {results['test_bond']:.4f})  on "
+          f"{results['n_test_evaluated']} test molecules")
+    print("test loss by t: " + "  ".join(f"{k.removeprefix('test_')} {v:.3f}" for k, v in results.items()
+                                         if k.startswith("test_t")))
+    print("samples: " + "  ".join(f"{k} {v:.3f}" for k, v in results["samples"].items() if k != "n"))
+    if "distribution" in results:
+        print("distribution: " + "  ".join(f"{k} {'-' if v is None else f'{v:.3f}'}"
+                                           for k, v in results["distribution"].items()))
+    print("\n".join(format_table(denoising_table(results["denoising"], run.info.bond_labels))))
 
     out = args.out or run_dir / "test_results.json"
     out.write_text(json.dumps(results, indent=2))
-    torch.save({"atoms": atoms, "adj": adj, "mask": mask}, out.with_name("test_samples.pt"))
+    save_samples(out.with_name("test_samples.pt"), atoms, adj, mask, smiles)
     print(f"wrote {out}")
 
 

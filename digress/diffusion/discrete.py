@@ -1,8 +1,15 @@
+"""
+changes: DiscreteDiffusion now stores T itself, limit_distribution/make_diffusion 
+for supporting also uniform transition alongside marginal.
+"""
+
 import torch
 import torch.nn.functional as F
 
 from digress.config import COSINE_SCHEDULE_OFFSET
 from digress.data.graphs import edge_mask_from_nodes
+
+TRANSITIONS = ("marginal", "uniform")
 
 
 def cosine_alpha_schedule(T, s=COSINE_SCHEDULE_OFFSET):
@@ -12,10 +19,23 @@ def cosine_alpha_schedule(T, s=COSINE_SCHEDULE_OFFSET):
     return (alpha_bars[1:] / alpha_bars[:-1]).clamp(1e-4, 0.9999).float()
 
 
+def limit_distribution(marginal, transition):
+    """Stationary distribution of the noise: data marginals (default) or uniform over the classes"""
+    marginal = torch.as_tensor(marginal, dtype=torch.float32)
+    if transition == "marginal":
+        return marginal
+    if transition == "uniform":
+        return torch.full_like(marginal, 1.0 / len(marginal))
+    raise ValueError(f"unknown transition {transition!r}; choose from {TRANSITIONS}")
+
+
 class DiscreteDiffusion:
-    def __init__(self, marginal, num_timesteps):
-        self.m = torch.as_tensor(marginal, dtype=torch.float32)
+    """Q_t = alpha_t I + (1 - alpha_t) 1 m^T : keep the class or resample it from the limit distribution m"""
+
+    def __init__(self, limit_dist, num_timesteps):
+        self.m = torch.as_tensor(limit_dist, dtype=torch.float32)
         self.K = len(self.m)
+        self.T = num_timesteps
         self.alphas = cosine_alpha_schedule(num_timesteps)
         self.alpha_bars = torch.cumprod(self.alphas, 0)
 
@@ -42,6 +62,11 @@ class DiscreteDiffusion:
     def reverse_step(self, xt, logits, t):
         probs = self.posterior_probs(xt, torch.softmax(logits, -1), t)
         return torch.distributions.Categorical(probs=probs).sample()
+
+
+def make_diffusions(marginals, transition, num_timesteps):
+    return (DiscreteDiffusion(limit_distribution(marginals["atom_marginal"], transition), num_timesteps),
+            DiscreteDiffusion(limit_distribution(marginals["bond_marginal"], transition), num_timesteps))
 
 
 def noise_graph(X, E, mask, t, atom_diffusion, bond_diffusion):

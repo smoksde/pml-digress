@@ -1,3 +1,7 @@
+"""
+changes: and also for cli/report_runs.py: dataset is read from run's config.json. Recall summary and fail table built from info.
+"""
+
 import csv
 import json
 import math
@@ -5,7 +9,7 @@ from pathlib import Path
 
 import torch
 
-from digress.data.chem import ATOM_LIST
+from digress.data.info import get_info
 from digress.evaluation.metrics import failure_breakdown
 from digress.report.molecules import show
 from digress.report.style import FULL_WIDTH, HALF_WIDTH, INK_2, MUTED, SERIES, figure
@@ -22,7 +26,9 @@ def load_run(path, label=None):
             return [{k: float(v) for k, v in r.items() if v != ""} for r in csv.DictReader(f)]
 
     test = path / "test_results.json"
-    return {"dir": path, "name": label or path.name, "config": json.loads((path / "config.json").read_text()),
+    config = json.loads((path / "config.json").read_text())
+    info = get_info(config.get("dataset", "qm9"), config.get("aromatic", False))  # M1 configs: QM9
+    return {"dir": path, "name": label or path.name, "config": config, "info": info,
             "metrics": rows("metrics.csv"), "samples": rows("samples.csv"),
             "test": json.loads(test.read_text()) if test.exists() else None}
 
@@ -84,8 +90,8 @@ def sample_quality(runs):
 def _test_samples(run):
     path = run["dir"] / "test_samples.pt"
     if "test_samples" not in run and path.exists():
-        run["test_samples"] = torch.load(path)
-        run["breakdown"] = failure_breakdown(**run["test_samples"])
+        run["test_samples"] = torch.load(path, weights_only=False)
+        run["breakdown"] = failure_breakdown(**run["test_samples"], info=run["info"])
     return run.get("test_samples")
 
 
@@ -110,7 +116,9 @@ def test_loss_by_t(runs):
     return fig
 
 
-RECALL_PANELS = (("bonds", ("single", "double", "triple")), ("atoms", ("N", "O", "F")))
+def _recall_panels(info):
+    # recall of every non-background class, bond types except "none", atom types except carbon (predominantz)
+    return (("bonds", info.bond_labels[1:]), ("atoms", info.atom_list[1:]))
 
 
 def denoising_recall(runs):
@@ -118,7 +126,7 @@ def denoising_recall(runs):
     if not tested:
         return None
     fig, axes = figure(FULL_WIDTH, 2.1, 1, 2, sharey=True)
-    for ax, (part, labels) in zip(axes, RECALL_PANELS):
+    for ax, (part, labels) in zip(axes, _recall_panels(tested[0]["info"])):
         for run, ls in zip(tested, ("-", "--", ":")):
             bins = run["test"]["denoising"]
             mids = [sum(int(x) for x in k[1:].split("-")) / 2 for k in bins]
@@ -139,12 +147,15 @@ FIGURES = (loss_curves, sample_quality, test_loss_by_t, denoising_recall)
 
 
 def failure_table(runs):
-    rows = [(run["name"], *("-" if math.isnan(v) else f"{100 * v:.1f}" for v in run["breakdown"]["violation_rate"].values()))
-            for run in runs if _test_samples(run) is not None]
-    if not rows:
+    tested = [run for run in runs if _test_samples(run) is not None]
+    if not tested:
         return None
+    if len({run["info"].atom_list for run in tested}) > 1:
+        raise ValueError("failure_table: runs use different datasets; report them separately")
+    rows = [(run["name"], *("-" if math.isnan(v) else f"{100 * v:.1f}" for v in run["breakdown"]["violation_rate"].values()))
+            for run in tested]
     return Table("valence_failures", "Generated atoms whose bond-order sum exceeds the neutral valence, by element (%).",
-                 ("Run", *ATOM_LIST), rows, ("From the samples drawn by digress.cli.evaluate_test.",))
+                 ("Run", *tested[0]["info"].atom_list), rows, ("From the samples drawn by digress.cli.evaluate_test.",))
 
 
 def failure_examples(run, outfile, k=16):
@@ -153,7 +164,7 @@ def failure_examples(run, outfile, k=16):
         return False
     idx = [i for i, ok in enumerate(run["breakdown"]["valid"]) if not ok][:k]
     if idx:
-        show(samples["atoms"][idx], samples["adj"][idx], samples["mask"][idx], outfile=outfile)
+        show(samples["atoms"][idx], samples["adj"][idx], samples["mask"][idx], outfile=outfile, info=run["info"])
     return bool(idx)
 
 
